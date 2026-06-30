@@ -10,6 +10,8 @@ from database.ia_filterdb import Media
 from utils import get_size, temp, get_settings
 from Script import script
 from pyrogram.errors import ChatAdminRequired
+import text_registry
+import media_registry
 
 MONGO_DB_CAP_BYTES = 536870912
 MONGO_DB_COUNT = len([u for u in (DATABASE_URI, DATABASE_URI2, DATABASE_URI3, DATABASE_URI4, DATABASE_URI5) if u])
@@ -59,11 +61,31 @@ async def save_group(bot, message):
                         await (temp.MELCOW['welcome']).delete()
                     except:
                         pass
-                temp.MELCOW['welcome'] = await message.reply_video(
-                video="https://mangandi-2-0.onrender.com/Xdgv.mp4",                                               
-                                                 caption=f'<pre>ʜᴇʏ, {u.mention} 👋🏻\nᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴏᴜʀ ɢʀᴏᴜᴘ {message.chat.title}\n\nʏᴏᴜ ᴄᴀɴ ꜰɪɴᴅ ᴍᴏᴠɪᴇꜱ / ꜱᴇʀɪᴇꜱ / ᴀɴɪᴍᴇꜱ ᴇᴛᴄ. ꜰʀᴏᴍ ʜᴇʀᴇ. ᴇɴᴊᴏʏ😉.</pre>',
-                                                 reply_markup=InlineKeyboardMarkup( [ [ InlineKeyboardButton('ɢʀᴏᴜᴘ', url='htpps://t.me/mn_movies_group2') ] ] )
-                )
+                try:
+                    welcome_caption = text_registry.get_live_text("welcome_caption").format(
+                        mention=u.mention, group=message.chat.title,
+                    )
+                except Exception:
+                    welcome_caption = text_registry.RUNTIME_DEFAULTS["welcome_caption"].format(
+                        mention=u.mention, group=message.chat.title,
+                    )
+                welcome_media = media_registry.get_live_media("welcome_media")
+                media_kind = welcome_media.get("kind", "video")
+                media_ref = welcome_media.get("ref") or "https://mangandi-2-0.onrender.com/Xdgv.mp4"
+                send_fn = message.reply_animation if media_kind == "animation" else message.reply_video
+                try:
+                    sent = await send_fn(
+                        **{media_kind: media_ref},
+                        caption=welcome_caption,
+                        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('ɢʀᴏᴜᴘ', url='htpps://t.me/mn_movies_group2')]]),
+                    )
+                except Exception:
+                    sent = await message.reply_video(
+                        video="https://mangandi-2-0.onrender.com/Xdgv.mp4",
+                        caption=welcome_caption,
+                        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('ɢʀᴏᴜᴘ', url='htpps://t.me/mn_movies_group2')]]),
+                    )
+                temp.MELCOW['welcome'] = sent
 
 @Client.on_message(filters.command('leave') & filters.user(ADMINS))
 async def leave_a_chat(bot, message):

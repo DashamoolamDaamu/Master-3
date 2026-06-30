@@ -4,6 +4,7 @@ from pyrogram.types import Message
 from database.users_chats_db import db
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from info import SUPPORT_CHAT
+import text_registry
 
 async def banned_users(_, client, message: Message):
     return (
@@ -21,7 +22,11 @@ disabled_group=filters.create(disabled_chat)
 @Client.on_message(filters.private & banned_user & filters.incoming)
 async def ban_reply(bot, message):
     ban = await db.get_ban_status(message.from_user.id)
-    await message.reply(f'Sorry Dude, You are Banned to use Me. \nBan Reason: {ban["ban_reason"]}')
+    try:
+        text = text_registry.get_live_text("ban_message").format(reason=ban["ban_reason"])
+    except Exception:
+        text = text_registry.RUNTIME_DEFAULTS["ban_message"].format(reason=ban["ban_reason"])
+    await message.reply(text)
 
 @Client.on_message(filters.group & disabled_group & filters.incoming)
 async def grp_bd(bot, message):
@@ -30,8 +35,12 @@ async def grp_bd(bot, message):
     ]]
     reply_markup=InlineKeyboardMarkup(buttons)
     vazha = await db.get_chat(message.chat.id)
+    try:
+        text = text_registry.get_live_text("disabled_chat_message").format(reason=vazha['reason'])
+    except Exception:
+        text = text_registry.RUNTIME_DEFAULTS["disabled_chat_message"].format(reason=vazha['reason'])
     k = await message.reply(
-        text=f"CHAT NOT ALLOWED 🐞\n\nMy admins has restricted me from working here ! If you want to know more about it contact support..\nReason : <code>{vazha['reason']}</code>.",
+        text=text,
         reply_markup=reply_markup)
     try:
         await k.pin()

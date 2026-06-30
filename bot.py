@@ -106,6 +106,21 @@ class Bot(Client):
         temp.BANNED_CHATS = b_chats
         await super().start()
         await asyncio.gather(Media.ensure_indexes(), db.ensure_indexes())
+
+        try:
+            import text_registry
+            applied = await text_registry.load_all_from_db()
+            logging.info(f"Text Manager: applied {applied} saved text override(s).")
+        except Exception as e:
+            logging.exception(f"Text Manager: failed to load saved overrides: {e}")
+
+        try:
+            import media_registry
+            applied_media = await media_registry.load_all_from_db()
+            logging.info(f"Media Manager: applied {applied_media} saved media override(s).")
+        except Exception as e:
+            logging.exception(f"Media Manager: failed to load saved overrides: {e}")
+
         me = await self.get_me()
         temp.ME = me.id
         temp.U_NAME = me.username

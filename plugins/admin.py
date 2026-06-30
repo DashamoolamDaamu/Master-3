@@ -26,6 +26,8 @@ from database.users_chats_db import db
 from utils import temp, humanbytes
 import plugins.new_updates as nu
 from plugins.commands import build_fsub_details_text
+import text_registry
+import media_registry
 
 logger = logging.getLogger(__name__)
 
@@ -74,12 +76,12 @@ MAIN_MENU_TEXT = (
 
 def _main_markup() -> InlineKeyboardMarkup:
     return _btn(
-        [("👤 User Management", "admin:users"), ("💬 Messages", "admin:messages")],
+        [("👤 User Management", "admin:users"), ("📝 Text Manager", "admin:textmgr")],
         [("🎨 Appearance", "admin:appearance"), ("🔍 Search", "admin:search")],
         [("⚙️ Behaviour", "admin:behaviour"), ("📊 Statistics", "admin:statistics")],
-        [("📢 Broadcast", "admin:broadcast"), ("📝 Text Manager", "admin:textmgr")],
-        [("🗄 Database", "admin:database"), ("🛠 Maintenance", "admin:maintenance")],
-        [("📜 Logs", "admin:logs"), ("⚡ Advanced", "admin:advanced")],
+        [("📢 Broadcast", "admin:broadcast"), ("🗄 Database", "admin:database")],
+        [("🛠 Maintenance", "admin:maintenance"), ("📜 Logs", "admin:logs")],
+        [("⚡ Advanced", "admin:advanced"), ("🖼 Media Manager", "admin:media")],
     )
 
 
@@ -295,39 +297,18 @@ async def admin_users_setauthch_prompt(client: Client, query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(r"^admin:messages$"))
 async def admin_messages_menu(client: Client, query: CallbackQuery):
+    # Legacy entry point — folded into the unified Text Manager.
     if not is_admin(query.from_user):
         return await query.answer("Not allowed", show_alert=True)
-    markup = _btn(
-        [("🚀 Start", "admin:msg:start"), ("❓ Help", "admin:msg:help")],
-        [("ℹ️ About", "admin:msg:about"), ("👋 Welcome", "admin:msg:welcome")],
-        [("❌ Error", "admin:msg:error"), ("✅ Success", "admin:msg:success")],
-        [("🔄 Restart", "admin:msg:restart"), ("📊 Status", "admin:msg:status")],
-        [("« Back", "admin:main")],
-    )
-    await query.message.edit_text("💬 <b>Messages</b>\nView current message templates:", reply_markup=markup)
+    await admin_textmgr_menu(client, query)
 
 
 @Client.on_callback_query(filters.regex(r"^admin:msg:(start|help|about|welcome|error|success|restart|status)$"))
 async def admin_msg_view(client: Client, query: CallbackQuery):
+    # Legacy entry point — folded into the unified Text Manager.
     if not is_admin(query.from_user):
         return await query.answer("Not allowed", show_alert=True)
-    key = query.matches[0].group(1)
-    from Script import script
-    mapping = {
-        "start": ("Start", str(script.START_TXT)),
-        "help": ("Help", "\n".join(script.HELP_PAGES) if hasattr(script, "HELP_PAGES") else str(script.HELP_TXT)),
-        "about": ("About", str(getattr(script, "ABOUT_TXT", "Not set."))),
-        "welcome": ("Welcome", str(getattr(script, "MELCOW_TXT", "Not set."))),
-        "error": ("Error", str(getattr(script, "ERROR_TXT", "Not set."))),
-        "success": ("Success", str(getattr(script, "SUCCESS_TXT", "Not set."))),
-        "restart": ("Restart", str(getattr(script, "RESTART_TXT", "Not set."))),
-        "status": ("Status", str(getattr(script, "RESTART_GC_TXT", "Not set."))),
-    }
-    label, text = mapping[key]
-    await query.message.edit_text(
-        f"<b>💬 {label} Message</b>\n\n<code>{text[:800]}</code>",
-        reply_markup=_btn([("« Back", "admin:messages")]),
-    )
+    await admin_textmgr_menu(client, query)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -628,47 +609,371 @@ async def admin_bc_history(client: Client, query: CallbackQuery):
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 📝  TEXT MANAGER
+# 📝  TEXT MANAGER — full CMS: view → edit → preview → confirm → save / reset
 # ═════════════════════════════════════════════════════════════════════════════
+
+# Pending edits awaiting confirmation: {user_id: {"key": str, "value": str}}
+_pending_text_edit: dict[int, dict] = {}
+
+
+def _truncate(s: str, n: int = 1200) -> str:
+    s = s or ""
+    return s if len(s) <= n else s[: n - 20] + "\n…(truncated)…"
+
 
 @Client.on_callback_query(filters.regex(r"^admin:textmgr$"))
 async def admin_textmgr_menu(client: Client, query: CallbackQuery):
     if not is_admin(query.from_user):
         return await query.answer("Not allowed", show_alert=True)
-    markup = _btn(
-        [("🚀 Start Text", "admin:txt:start"), ("❓ Help Text", "admin:txt:help")],
-        [("ℹ️ About Text", "admin:txt:about"), ("👋 Welcome Text", "admin:txt:welcome")],
-        [("❌ Error Text", "admin:txt:error"), ("📊 Status Text", "admin:txt:status")],
-        [("📋 Custom Templates", "admin:txt:custom")],
-        [("« Back", "admin:main")],
+    pairs = list(text_registry.CATEGORIES)
+    grid = []
+    for i in range(0, len(pairs), 2):
+        row = []
+        for key, label in pairs[i:i + 2]:
+            row.append((label, f"admin:textmgr:cat:{key}"))
+        grid.append(row)
+    grid.append([("« Back", "admin:main")])
+    markup = _btn(*grid)
+    await query.message.edit_text(
+        "📝 <b>Text Manager</b>\n\n"
+        "Every bot-facing message lives here — edit it, preview it, confirm, "
+        "and it applies instantly with no restart. Pick a category:",
+        reply_markup=markup,
     )
-    await query.message.edit_text("📝 <b>Text Manager</b>\nView & manage message templates:", reply_markup=markup)
 
 
-@Client.on_callback_query(filters.regex(r"^admin:txt:(start|help|about|welcome|error|status|custom)$"))
-async def admin_txt_view(client: Client, query: CallbackQuery):
+@Client.on_callback_query(filters.regex(r"^admin:textmgr:cat:([a-z]+)$"))
+async def admin_textmgr_category(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    cat = query.matches[0].group(1)
+    entries = text_registry.entries_for_category(cat)
+    if not entries:
+        return await query.answer("Unknown category", show_alert=True)
+    cat_label = dict(text_registry.CATEGORIES).get(cat, cat)
+    grid = []
+    for i in range(0, len(entries), 2):
+        row = [(e["label"], f"admin:textmgr:view:{e['key']}") for e in entries[i:i + 2]]
+        grid.append(row)
+    grid.append([("« Back", "admin:textmgr")])
+    markup = _btn(*grid)
+    await query.message.edit_text(f"{cat_label}\n\nSelect a message to view or edit:", reply_markup=markup)
+
+
+@Client.on_callback_query(filters.regex(r"^admin:textmgr:view:([a-z0-9_]+)$"))
+async def admin_textmgr_view(client: Client, query: CallbackQuery):
     if not is_admin(query.from_user):
         return await query.answer("Not allowed", show_alert=True)
     key = query.matches[0].group(1)
-    from Script import script
-    mapping = {
-        "start": ("Start", str(script.START_TXT)),
-        "help": ("Help", str(script.HELP_TXT)),
-        "about": ("About", str(getattr(script, "ABOUT_TXT", "Not set."))),
-        "welcome": ("Welcome", str(getattr(script, "MELCOW_TXT", "Not set."))),
-        "error": ("Error", str(getattr(script, "ERROR_TXT", "Not set."))),
-        "status": ("Status", str(getattr(script, "RESTART_TXT", "Not set."))),
-        "custom": ("Custom Templates", f"File Caption:\n{CUSTOM_FILE_CAPTION}\n\nIMDB Template:\n{IMDB_TEMPLATE}"),
-    }
-    label, text = mapping[key]
-    await query.message.edit_text(
-        f"📝 <b>{label} Text</b>\n\n<code>{text[:1000]}</code>",
-        reply_markup=_btn([("« Back", "admin:textmgr")]),
+    entry = text_registry.get_entry(key)
+    if not entry:
+        return await query.answer("Unknown text key", show_alert=True)
+    current = text_registry.get_current(key)
+    is_default = current == text_registry.get_default(key)
+    status = "🟢 Using default" if is_default else "🟡 Customized"
+    text = (
+        f"<b>{entry['label']}</b>\n"
+        f"Status: {status}\n"
+        f"Variables: <code>{entry['variables']}</code>\n\n"
+        f"<b>Current value:</b>\n<code>{_truncate(current)}</code>"
     )
+    rows = [[("✏️ Edit", f"admin:textmgr:edit:{key}")]]
+    if not is_default:
+        rows.append([("↩️ Reset to Default", f"admin:textmgr:reset:{key}")])
+    rows.append([("« Back", f"admin:textmgr:cat:{entry['category']}")])
+    await query.message.edit_text(text, reply_markup=_btn(*rows))
+
+
+@Client.on_callback_query(filters.regex(r"^admin:textmgr:edit:([a-z0-9_]+)$"))
+async def admin_textmgr_edit_prompt(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    entry = text_registry.get_entry(key)
+    if not entry:
+        return await query.answer("Unknown text key", show_alert=True)
+    _fsm[query.from_user.id] = {"state": "await_text_edit", "key": key}
+    await query.message.edit_text(
+        f"✏️ <b>Editing: {entry['label']}</b>\n\n"
+        f"Send the new text now as a single message. Supports HTML formatting.\n"
+        f"Variables you can use: <code>{entry['variables']}</code>\n\n"
+        f"Send /cancel to abort.",
+        reply_markup=_btn([("✖️ Cancel", f"admin:textmgr:canceledit:{key}")]),
+    )
+
+
+@Client.on_callback_query(filters.regex(r"^admin:textmgr:canceledit:([a-z0-9_]+)$"))
+async def admin_textmgr_cancel_edit(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    _fsm.pop(query.from_user.id, None)
+    _pending_text_edit.pop(query.from_user.id, None)
+    await query.answer("Cancelled")
+    await admin_textmgr_view(client, query)
+
+
+@Client.on_callback_query(filters.regex(r"^admin:textmgr:save:([a-z0-9_]+)$"))
+async def admin_textmgr_save(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    pending = _pending_text_edit.pop(query.from_user.id, None)
+    entry = text_registry.get_entry(key)
+    if not pending or pending.get("key") != key or not entry:
+        return await query.answer("Nothing pending to save — start over.", show_alert=True)
+    await text_registry.save_text(key, pending["value"])
+    await query.answer("Saved ✅")
+    await query.message.edit_text(
+        f"✅ <b>{entry['label']} updated and applied instantly.</b>",
+        reply_markup=_btn(
+            [("👁 View", f"admin:textmgr:view:{key}")],
+            [("« Back to category", f"admin:textmgr:cat:{entry['category']}")],
+        ),
+    )
+
+
+@Client.on_callback_query(filters.regex(r"^admin:textmgr:reset:([a-z0-9_]+)$"))
+async def admin_textmgr_reset_confirm(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    entry = text_registry.get_entry(key)
+    if not entry:
+        return await query.answer("Unknown text key", show_alert=True)
+    await query.message.edit_text(
+        f"↩️ Reset <b>{entry['label']}</b> to its built-in default?\n"
+        f"Your current custom text will be discarded.",
+        reply_markup=_btn(
+            [("✅ Yes, reset", f"admin:textmgr:resetdo:{key}"), ("✖️ Cancel", f"admin:textmgr:view:{key}")],
+        ),
+    )
+
+
+@Client.on_callback_query(filters.regex(r"^admin:textmgr:resetdo:([a-z0-9_]+)$"))
+async def admin_textmgr_reset_do(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    entry = text_registry.get_entry(key)
+    if not entry:
+        return await query.answer("Unknown text key", show_alert=True)
+    await text_registry.reset_text(key)
+    await query.answer("Reset ✅")
+    await admin_textmgr_view(client, query)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 🖼  MEDIA MANAGER — Telegram file_id storage, upload → preview → confirm → save
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _media_kind_of(message: Message):
+    if message.photo:
+        return "photo", message.photo.file_id
+    if message.video:
+        return "video", message.video.file_id
+    if message.animation:
+        return "animation", message.animation.file_id
+    return None, None
+
+
+@Client.on_callback_query(filters.regex(r"^admin:media$"))
+async def admin_media_menu(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    grid = [[(s["label"], f"admin:media:view:{s['key']}")] for s in media_registry.SLOTS]
+    grid.append([("« Back", "admin:main")])
+    await query.message.edit_text(
+        "🖼 <b>Media Manager</b>\n\n"
+        "Upload once, stored as a Telegram file_id — no external hosting needed. "
+        "Changes apply instantly.",
+        reply_markup=_btn(*grid),
+    )
+
+
+@Client.on_callback_query(filters.regex(r"^admin:media:view:([a-z0-9_]+)$"))
+async def admin_media_view(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    slot = media_registry.get_slot(key)
+    if not slot:
+        return await query.answer("Unknown media slot", show_alert=True)
+    _fsm.pop(query.from_user.id, None)
+
+    if slot["kind"] == "pool":
+        items = media_registry.get_current_pool(key)
+        is_default = items == media_registry.get_default_pool(key)
+        status = "🟢 Using default pool" if is_default else "🟡 Customized"
+        text = (
+            f"<b>{slot['label']}</b>\n{slot['help']}\n\n"
+            f"Status: {status}\nItems in pool: <b>{len(items)}</b>\n"
+            f"Accepts: <code>{', '.join(slot['accepts'])}</code>"
+        )
+        rows = [
+            [("➕ Add Photo", f"admin:media:add:{key}"), ("👁 Preview Last", f"admin:media:preview:{key}")],
+            [("➖ Remove Last", f"admin:media:removelast:{key}")],
+        ]
+        if not is_default:
+            rows.append([("↩️ Reset to Default", f"admin:media:reset:{key}")])
+        rows.append([("« Back", "admin:media")])
+        await query.message.edit_text(text, reply_markup=_btn(*rows))
+    else:
+        current = media_registry.get_current_single(key)
+        is_default = current == media_registry.get_default_single(key)
+        status = "🟢 Using default" if is_default else "🟡 Customized"
+        text = (
+            f"<b>{slot['label']}</b>\n{slot['help']}\n\n"
+            f"Status: {status}\nCurrent type: <code>{current.get('kind', 'n/a')}</code>\n"
+            f"Accepts: <code>{', '.join(slot['accepts'])}</code>"
+        )
+        rows = [[("✏️ Replace", f"admin:media:add:{key}"), ("👁 Preview", f"admin:media:preview:{key}")]]
+        if not is_default:
+            rows.append([("↩️ Reset to Default", f"admin:media:reset:{key}")])
+        rows.append([("« Back", "admin:media")])
+        await query.message.edit_text(text, reply_markup=_btn(*rows))
+
+
+@Client.on_callback_query(filters.regex(r"^admin:media:add:([a-z0-9_]+)$"))
+async def admin_media_add_prompt(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    slot = media_registry.get_slot(key)
+    if not slot:
+        return await query.answer("Unknown media slot", show_alert=True)
+    _fsm[query.from_user.id] = {"state": "await_media_upload", "key": key}
+    await query.message.edit_text(
+        f"📤 <b>Upload — {slot['label']}</b>\n\n"
+        f"Send a {' or '.join(slot['accepts'])} now as a message.\n"
+        f"Send /cancel to abort.",
+        reply_markup=_btn([("✖️ Cancel", f"admin:media:view:{key}")]),
+    )
+
+
+@Client.on_callback_query(filters.regex(r"^admin:media:preview:([a-z0-9_]+)$"))
+async def admin_media_preview(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    slot = media_registry.get_slot(key)
+    if not slot:
+        return await query.answer("Unknown media slot", show_alert=True)
+    await query.answer()
+    if slot["kind"] == "pool":
+        items = media_registry.get_current_pool(key)
+        if not items:
+            return await query.message.reply("Pool is empty.")
+        ref = items[-1]
+    else:
+        current = media_registry.get_current_single(key)
+        ref = current.get("ref")
+        slot = dict(slot, accepts=(current.get("kind", "video"),))
+    if not ref:
+        return await query.message.reply("Nothing set yet.")
+    try:
+        if "photo" in slot["accepts"] and slot["kind"] == "pool":
+            await query.message.reply_photo(ref, caption="Preview")
+        elif "animation" in slot["accepts"] and slot["kind"] != "pool":
+            await query.message.reply_animation(ref, caption="Preview")
+        else:
+            await query.message.reply_video(ref, caption="Preview")
+    except Exception as e:
+        await query.message.reply(f"⚠️ Couldn't preview: <code>{e}</code>")
+
+
+@Client.on_callback_query(filters.regex(r"^admin:media:removelast:([a-z0-9_]+)$"))
+async def admin_media_remove_last(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    slot = media_registry.get_slot(key)
+    if not slot or slot["kind"] != "pool":
+        return await query.answer("Not a pool slot", show_alert=True)
+    items = media_registry.get_current_pool(key)
+    if not items:
+        return await query.answer("Pool already empty", show_alert=True)
+    await media_registry.remove_last_from_pool(key)
+    await query.answer("Removed ✅")
+    await admin_media_view(client, query)
+
+
+@Client.on_callback_query(filters.regex(r"^admin:media:reset:([a-z0-9_]+)$"))
+async def admin_media_reset_confirm(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    slot = media_registry.get_slot(key)
+    if not slot:
+        return await query.answer("Unknown media slot", show_alert=True)
+    await query.message.edit_text(
+        f"↩️ Reset <b>{slot['label']}</b> to its built-in default?\nYour custom upload(s) will be discarded.",
+        reply_markup=_btn(
+            [("✅ Yes, reset", f"admin:media:resetdo:{key}"), ("✖️ Cancel", f"admin:media:view:{key}")],
+        ),
+    )
+
+
+@Client.on_callback_query(filters.regex(r"^admin:media:resetdo:([a-z0-9_]+)$"))
+async def admin_media_reset_do(client: Client, query: CallbackQuery):
+    if not is_admin(query.from_user):
+        return await query.answer("Not allowed", show_alert=True)
+    key = query.matches[0].group(1)
+    slot = media_registry.get_slot(key)
+    if not slot:
+        return await query.answer("Unknown media slot", show_alert=True)
+    if slot["kind"] == "pool":
+        await media_registry.reset_pool(key)
+    else:
+        await media_registry.reset_single(key)
+    await query.answer("Reset ✅")
+    await admin_media_view(client, query)
+
+
+@Client.on_message(filters.private & (filters.photo | filters.video | filters.animation))
+async def admin_media_upload_handler(client: Client, message: Message):
+    uid = message.from_user.id if message.from_user else None
+    if not uid or uid not in _fsm:
+        return
+    if not is_admin(message.from_user):
+        _fsm.pop(uid, None)
+        return
+    state_data = _fsm.get(uid)
+    if state_data.get("state") != "await_media_upload":
+        return
+    _fsm.pop(uid, None)
+
+    key = state_data.get("key")
+    slot = media_registry.get_slot(key)
+    if not slot:
+        await message.reply("❌ Unknown media slot, upload aborted.")
+        return
+
+    kind, file_id = _media_kind_of(message)
+    if not kind or kind not in slot["accepts"]:
+        await message.reply(
+            f"⚠️ Wrong media type. {slot['label']} accepts: <code>{', '.join(slot['accepts'])}</code>. "
+            f"Try again from the panel."
+        )
+        return
+
+    if slot["kind"] == "pool":
+        items = await media_registry.add_to_pool(key, file_id)
+        await message.reply(
+            f"✅ Added to <b>{slot['label']}</b>. Pool now has <b>{len(items)}</b> item(s) — applied instantly.",
+            reply_markup=_btn([("👁 View", f"admin:media:view:{key}")]),
+        )
+    else:
+        await media_registry.save_single(key, kind, file_id)
+        await message.reply(
+            f"✅ <b>{slot['label']}</b> updated and applied instantly.",
+            reply_markup=_btn([("👁 View", f"admin:media:view:{key}")]),
+        )
 
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 🗄  DATABASE
+
 # ═════════════════════════════════════════════════════════════════════════════
 
 @Client.on_callback_query(filters.regex(r"^admin:database$"))
@@ -1273,7 +1578,30 @@ async def admin_fsm_handler(client: Client, message: Message):
     state_data = _fsm.pop(uid)
     state = state_data["state"]
 
-    if state == "await_ban_id":
+    if message.text and message.text.strip().lower() == "/cancel":
+        _pending_text_edit.pop(uid, None)
+        await message.reply("✖️ Cancelled.")
+        return
+
+    if state == "await_text_edit":
+        key = state_data.get("key")
+        entry = text_registry.get_entry(key)
+        if not entry:
+            await message.reply("❌ Unknown text key, edit aborted.")
+            return
+        new_value = message.text
+        _pending_text_edit[uid] = {"key": key, "value": new_value}
+        await message.reply(
+            f"👁 <b>Preview — {entry['label']}</b>\n\n"
+            f"<code>{_truncate(new_value)}</code>\n\n"
+            f"Save this as the new {entry['label']}?",
+            reply_markup=_btn(
+                [("✅ Confirm & Save", f"admin:textmgr:save:{key}"),
+                 ("✖️ Discard", f"admin:textmgr:canceledit:{key}")],
+            ),
+        )
+
+    elif state == "await_ban_id":
         try:
             target = int(message.text.strip())
             if not await db.is_user_exist(target):
