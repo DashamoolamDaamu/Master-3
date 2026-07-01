@@ -1,7 +1,7 @@
-from kurigram.types import Message
-from kurigram import Client, filters
-from kurigram import filters, enums 
-from kurigram.types import *
+from pyrogram.types import Message
+from pyrogram import Client, filters
+from pyrogram import filters, enums 
+from pyrogram.types import *
 
 async def admin_check(message: Message) -> bool:
     if not message.from_user:

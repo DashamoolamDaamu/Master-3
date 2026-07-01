@@ -1,7 +1,7 @@
 import os
 import json
-from kurigram import Client, filters
-from kurigram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Callback for displaying message as JSON
 @Client.on_message(filters.command(["json", "js", "showjson"]))

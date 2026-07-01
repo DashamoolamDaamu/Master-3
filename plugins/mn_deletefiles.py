@@ -2,8 +2,8 @@ import logging
 import asyncio
 import re
 
-from kurigram import Client, filters, enums
-from kurigram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from pyrogram import Client, filters, enums
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
 from database.ia_filterdb import Media, USE_MONGO
 from info import ADMINS

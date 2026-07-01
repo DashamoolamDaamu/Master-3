@@ -2,12 +2,12 @@
 #please give credits https://github.com/MN-BOTS/ShobanaFilterBot
 
 import logging
-from kurigram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
+from pyrogram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
 from info import LONG_IMDB_DESCRIPTION, MAX_LIST_ELM
 import asyncio
-from kurigram.types import Message, InlineKeyboardButton
-from kurigram import enums
-from kurigram.enums import KeyboardButtonColor
+from pyrogram.types import Message, InlineKeyboardButton
+from pyrogram import enums
+from pyrogram.enums import KeyboardButtonColor
 from typing import Union
 import re
 import os
@@ -49,7 +49,7 @@ class temp(object):
 
 #  @MrMNTG @MusammilN
 #please give credits https://github.com/MN-BOTS/ShobanaFilterBot
-from kurigram.enums import ChatMemberStatus
+from pyrogram.enums import ChatMemberStatus
 from database.users_chats_db import db
 from info import REQUEST_FSUB_MODE  # Import from your info.py
 

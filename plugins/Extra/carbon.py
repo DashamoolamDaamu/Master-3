@@ -1,7 +1,7 @@
 import aiohttp
 import logging
 from io import BytesIO
-from kurigram import Client, filters
+from pyrogram import Client, filters
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

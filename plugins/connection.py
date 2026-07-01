@@ -1,5 +1,5 @@
-from kurigram import filters, Client, enums
-from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram import filters, Client, enums
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from database.connections_mdb import add_connection, all_connections, if_active, delete_connection
 from info import ADMINS
 import logging

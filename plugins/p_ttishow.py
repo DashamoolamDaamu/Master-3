@@ -1,6 +1,6 @@
-from kurigram import Client, filters, enums
-from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from kurigram.errors.exceptions.bad_request_400 import MessageTooLong, PeerIdInvalid
+from pyrogram import Client, filters, enums
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.errors.exceptions.bad_request_400 import MessageTooLong, PeerIdInvalid
 from info import (
     ADMINS, LOG_CHANNEL, SUPPORT_CHAT, MELCOW_NEW_USERS, DATABASE_URI, DATABASE_URI2, DATABASE_URI3, DATABASE_URI4, DATABASE_URI5,
     POSTGRES_STORAGE_LIMIT_BYTES,
@@ -9,7 +9,7 @@ from database.users_chats_db import db
 from database.ia_filterdb import Media
 from utils import get_size, temp, get_settings
 from Script import script
-from kurigram.errors import ChatAdminRequired
+from pyrogram.errors import ChatAdminRequired
 import text_registry
 import media_registry
 

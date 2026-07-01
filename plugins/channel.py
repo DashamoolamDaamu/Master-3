@@ -1,4 +1,4 @@
-from kurigram import Client, filters
+from pyrogram import Client, filters
 from info import CHANNELS
 from database.ia_filterdb import save_file
 from plugins.new_updates import post_new_content_update

@@ -7,9 +7,9 @@ import asyncio
 import logging
 import math
 
-from kurigram import Client, filters, enums
-from kurigram.errors import MessageNotModified
-from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram import Client, filters, enums
+from pyrogram.errors import MessageNotModified
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from database.genre_cache_db import (
     ensure_indexes,

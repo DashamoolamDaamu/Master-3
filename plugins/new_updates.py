@@ -3,9 +3,9 @@ import logging
 import re
 from datetime import datetime, timezone
 
-from kurigram import Client, filters
-from kurigram.enums import ParseMode
-from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram import Client, filters
+from pyrogram.enums import ParseMode
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from database.users_chats_db import db
 from info import ADMINS

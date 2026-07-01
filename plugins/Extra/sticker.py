@@ -1,4 +1,4 @@
-from kurigram import Client, filters
+from pyrogram import Client, filters
 
 @Client.on_message(filters.command(["stickerid"]))
 async def stickerid(bot, message):   

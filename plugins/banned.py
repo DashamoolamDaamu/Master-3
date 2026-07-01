@@ -1,8 +1,8 @@
-from kurigram import Client, filters
+from pyrogram import Client, filters
 from utils import temp
-from kurigram.types import Message
+from pyrogram.types import Message
 from database.users_chats_db import db
-from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from info import SUPPORT_CHAT
 import text_registry
 

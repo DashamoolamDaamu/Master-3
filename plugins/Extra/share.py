@@ -4,9 +4,9 @@
 
 
 import os
-from kurigram import Client, filters
+from pyrogram import Client, filters
 from urllib.parse import quote
-from kurigram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 @Client.on_message(filters.command(["share_text", "share", "sharetext"]))
 async def share_text(client, message):

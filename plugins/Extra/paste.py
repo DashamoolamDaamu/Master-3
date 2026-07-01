@@ -1,5 +1,5 @@
 import os, re, json, aiohttp, requests
-from kurigram import Client, filters
+from pyrogram import Client, filters
 
 #Headers
 headers = {

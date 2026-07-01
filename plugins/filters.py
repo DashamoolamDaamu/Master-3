@@ -1,7 +1,7 @@
 import io
-from kurigram import filters, Client, enums
-from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from kurigram.enums import KeyboardButtonColor
+from pyrogram import filters, Client, enums
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.enums import KeyboardButtonColor
 
 
 def _filter_action_btn(text: str, callback_data: str, positive: bool) -> InlineKeyboardButton:

@@ -3,10 +3,10 @@ import logging
 import random
 import asyncio
 from Script import script
-from kurigram import Client, filters, enums
-from kurigram.errors import ChatAdminRequired, FloodWait
-from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from kurigram.enums import KeyboardButtonColor
+from pyrogram import Client, filters, enums
+from pyrogram.errors import ChatAdminRequired, FloodWait
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.enums import KeyboardButtonColor
 from database.ia_filterdb import Media, get_file_details, unpack_new_file_id
 from database.users_chats_db import db
 from info import CHANNELS, ADMINS, LOG_CHANNEL, PICS, BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT, FILE_CHANNELS, FILE_CHANNEL_SENDING_MODE, FILE_AUTO_DELETE_SECONDS, STREAM_BASE_URL, BIN_CHANNEL
@@ -16,7 +16,7 @@ from plugins.pm_filter import auto_filter
 from streaming.stream_utils import gen_stream_links
 import re
 import json
-from kurigram.types import Message
+from pyrogram.types import Message
 import base64
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ BATCH_FILES = {}
 
 
 # ── Colored button helpers (ForceSub only) ──────────────────────────────────
-# Kurigram supports KeyboardButtonColor for inline buttons.
+# pyrotgfork supports KeyboardButtonColor for inline buttons.
 # We use SUCCESS (green) for Join buttons and WARNING (orange) for Try Again.
 # Falls back gracefully to plain buttons if the parameter is unsupported.
 

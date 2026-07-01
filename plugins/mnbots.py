@@ -1,6 +1,6 @@
 #  @MrMNTG @MusammilN
-from kurigram import Client
-from kurigram.types import ChatJoinRequest
+from pyrogram import Client
+from pyrogram.types import ChatJoinRequest
 from database.users_chats_db import db
 from utils import JOIN_REQUEST_USERS
 

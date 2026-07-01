@@ -1,7 +1,7 @@
 import random
 import re, asyncio, time, shutil, psutil, os, sys
-from kurigram import Client, filters, enums
-from kurigram.types import *
+from pyrogram import Client, filters, enums
+from pyrogram.types import *
 from info import BOT_START_TIME, ADMINS
 from utils import humanbytes  
 

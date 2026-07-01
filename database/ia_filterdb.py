@@ -6,7 +6,7 @@ import re
 import base64
 import asyncio
 import time
-from kurigram.file_id import FileId
+from pyrogram.file_id import FileId
 from pymongo.errors import DuplicateKeyError, OperationFailure
 from motor.motor_asyncio import AsyncIOMotorClient
 import hashlib

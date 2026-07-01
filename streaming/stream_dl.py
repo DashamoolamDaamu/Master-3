@@ -6,9 +6,9 @@ import asyncio
 import logging
 from typing import Any, AsyncGenerator, Awaitable, Callable, Dict, Optional
 
-from kurigram import Client
-from kurigram.errors import FloodWait
-from kurigram.types import Message
+from pyrogram import Client
+from pyrogram.errors import FloodWait
+from pyrogram.types import Message
 
 logger = logging.getLogger(__name__)
 
