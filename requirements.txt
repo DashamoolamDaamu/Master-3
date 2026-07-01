@@ -41,7 +41,7 @@ shortzy
 speedtest-cli
 telegraph
 tgcrypto
-git+https://github.com/TelegramPlayGround/pyrogram
+pyrotgfork
 ujson
 wget
 werkzeug>=2.0
