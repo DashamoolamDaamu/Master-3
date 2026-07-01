@@ -1,5 +1,5 @@
-from pyrogram import Client, filters
-from pyrogram.errors import MessageTooLong
+from kurigram import Client, filters
+from kurigram.errors import MessageTooLong
 import sys, os
 import re
 import traceback

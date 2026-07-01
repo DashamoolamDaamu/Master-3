@@ -1,8 +1,7 @@
 import os
 import aiohttp
-from pyrogram import Client, filters, enums
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle, InputTextMessageContent
-from pyrogram.handlers import MessageHandler
+from kurigram import Client, filters, enums
+from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle, InputTextMessageContent
 from pyshorteners import Shortener
 
 BITLY_API = os.environ.get("BITLY_API", "8df1df8c23f719e5cf97788cc2d40321ea30092b")
@@ -42,8 +41,7 @@ async def inline_short(bot, update):
             input_message_content=InputTextMessageContent(
                 message_text=shorten_urls,
                 disable_web_page_preview=True
-            ),
-            reply_to_message_id=message.id
+            )
         )
     ]
     await bot.answer_inline_query(

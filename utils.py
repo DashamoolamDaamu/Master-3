@@ -2,11 +2,12 @@
 #please give credits https://github.com/MN-BOTS/ShobanaFilterBot
 
 import logging
-from pyrogram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
+from kurigram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
 from info import LONG_IMDB_DESCRIPTION, MAX_LIST_ELM
 import asyncio
-from pyrogram.types import Message, InlineKeyboardButton
-from pyrogram import enums
+from kurigram.types import Message, InlineKeyboardButton
+from kurigram import enums
+from kurigram.enums import KeyboardButtonColor
 from typing import Union
 import re
 import os
@@ -48,7 +49,7 @@ class temp(object):
 
 #  @MrMNTG @MusammilN
 #please give credits https://github.com/MN-BOTS/ShobanaFilterBot
-from pyrogram.enums import ChatMemberStatus
+from kurigram.enums import ChatMemberStatus
 from database.users_chats_db import db
 from info import REQUEST_FSUB_MODE  # Import from your info.py
 
@@ -402,6 +403,21 @@ def split_quotes(text: str) -> List:
         key = text[0] + text[0]
     return list(filter(None, [key, rest]))
 
+def _make_filter_btn(text: str, *, url: str = None, callback_data: str = None) -> InlineKeyboardButton:
+    """Create a colored InlineKeyboardButton for filter replies.
+    URL buttons use DEFAULT color; alert/callback buttons use SUCCESS (green).
+    Falls back to plain buttons if color parameter is unsupported.
+    """
+    try:
+        if url:
+            return InlineKeyboardButton(text, url=url, color=KeyboardButtonColor.DEFAULT)
+        return InlineKeyboardButton(text, callback_data=callback_data, color=KeyboardButtonColor.SUCCESS)
+    except TypeError:
+        if url:
+            return InlineKeyboardButton(text, url=url)
+        return InlineKeyboardButton(text, callback_data=callback_data)
+
+
 def parser(text, keyword):
     if "buttonalert" in text:
         text = (text.replace("\n", "\\n").replace("\t", "\\t"))
@@ -423,28 +439,20 @@ def parser(text, keyword):
             note_data += text[prev:match.start(1)]
             prev = match.end(1)
             if match.group(3) == "buttonalert":
-                # create a thruple with button label, url, and newline status
+                cb_data = f"alertmessage:{i}:{keyword}"
                 if bool(match.group(5)) and buttons:
-                    buttons[-1].append(InlineKeyboardButton(
-                        text=match.group(2),
-                        callback_data=f"alertmessage:{i}:{keyword}"
-                    ))
+                    buttons[-1].append(_make_filter_btn(match.group(2), callback_data=cb_data))
                 else:
-                    buttons.append([InlineKeyboardButton(
-                        text=match.group(2),
-                        callback_data=f"alertmessage:{i}:{keyword}"
-                    )])
+                    buttons.append([_make_filter_btn(match.group(2), callback_data=cb_data)])
                 i += 1
                 alerts.append(match.group(4))
             elif bool(match.group(5)) and buttons:
-                buttons[-1].append(InlineKeyboardButton(
-                    text=match.group(2),
-                    url=match.group(4).replace(" ", "")
+                buttons[-1].append(_make_filter_btn(
+                    match.group(2), url=match.group(4).replace(" ", "")
                 ))
             else:
-                buttons.append([InlineKeyboardButton(
-                    text=match.group(2),
-                    url=match.group(4).replace(" ", "")
+                buttons.append([_make_filter_btn(
+                    match.group(2), url=match.group(4).replace(" ", "")
                 )])
 
         else:
@@ -455,7 +463,7 @@ def parser(text, keyword):
 
     try:
         return note_data, buttons, alerts
-    except:
+    except Exception:
         return note_data, buttons, None
 
 def remove_escapes(text: str) -> str:

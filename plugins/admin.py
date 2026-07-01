@@ -10,8 +10,8 @@ import time
 import logging
 
 import psutil
-from pyrogram import Client, filters
-from pyrogram.types import (
+from kurigram import Client, filters
+from kurigram.types import (
     InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery, BotCommand,
 )
 

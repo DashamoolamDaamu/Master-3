@@ -1,6 +1,6 @@
 
-from pyrogram import Client, filters, enums
-from pyrogram.types import *
+from kurigram import Client, filters, enums
+from kurigram.types import *
 
 @Client.on_message(filters.command("echo") & filters.group)
 async def echo(client, message):

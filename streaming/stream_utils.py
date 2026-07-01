@@ -8,7 +8,7 @@ from datetime import datetime as dt
 from typing import Any, Dict, Optional
 from urllib.parse import quote
 
-from pyrogram.types import Message
+from kurigram.types import Message
 
 logger = logging.getLogger(__name__)
 

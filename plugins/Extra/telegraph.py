@@ -1,7 +1,7 @@
 import os
 import requests
-from pyrogram import Client, filters
-from pyrogram.types import Message
+from kurigram import Client, filters
+from kurigram.types import Message
 
 @Client.on_message(filters.command(["img", "cup", "telegraph"], prefixes="/") & filters.reply)
 async def c_upload(client, message: Message):

@@ -1,5 +1,5 @@
-from pyrogram import Client, filters
-from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, PeerIdInvalid
+from kurigram import Client, filters
+from kurigram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, PeerIdInvalid
 import asyncio
 from database.users_chats_db import db
 from info import ADMINS

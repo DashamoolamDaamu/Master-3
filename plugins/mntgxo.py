@@ -1,6 +1,6 @@
 #  @MrMNTG @MusammilN 
-from pyrogram import filters, Client
-from pyrogram.types import Message
+from kurigram import filters, Client
+from kurigram.types import Message
 from utils import JOIN_REQUEST_USERS
 from info import ADMINS
 from database.users_chats_db import db

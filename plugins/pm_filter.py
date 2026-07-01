@@ -4,9 +4,9 @@ import asyncio
 import re
 import ast
 import math
-from pyrogram.errors.exceptions.bad_request_400 import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
+from kurigram.errors.exceptions.bad_request_400 import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
 from Script import script
-import pyrogram
+import kurigram
 from database.connections_mdb import active_connection, all_connections, delete_connection, if_active, make_active, \
     make_inactive
 from info import (
@@ -14,9 +14,9 @@ from info import (
     SINGLE_BUTTON, SPELL_CHECK_REPLY, IMDB_TEMPLATE, DATABASE_URI, DATABASE_URI2, DATABASE_URI3, DATABASE_URI4, DATABASE_URI5,
     POSTGRES_STORAGE_LIMIT_BYTES, DELETE_USER_SEARCH_MESSAGE, PM_SEARCH_GROUP_LINK, PM_SEARCH_REDIRECT_TEXT,
 )
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from pyrogram import Client, filters, enums
-from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerIdInvalid
+from kurigram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from kurigram import Client, filters, enums
+from kurigram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerIdInvalid
 from utils import get_size, is_subscribed, get_poster, search_gagala, temp, get_settings, save_group_settings, create_invite_links
 from database.users_chats_db import db
 from info import HYPER_MODE

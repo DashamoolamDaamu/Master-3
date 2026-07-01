@@ -1,7 +1,7 @@
 import os
 import io
 import asyncio
-from pyrogram import Client, filters
+from kurigram import Client, filters
 from info import ADMINS
 from subprocess import getoutput as run, TimeoutExpired
 

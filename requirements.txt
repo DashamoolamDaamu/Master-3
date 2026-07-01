@@ -5,7 +5,6 @@ bs4
 colorama
 countryinfo
 dnspython>=2.3.0
-ffmpeg
 ffmpeg-python>=0.2.0
 Flask
 fuzzywuzzy
@@ -39,18 +38,15 @@ pytz
 requests
 search_engine_parser
 shortzy
-speedtest>=0.0.1
 speedtest-cli
 telegraph
 tgcrypto
-pyrotgfork
+kurigram
 ujson
 wget
 werkzeug>=2.0
 wheel
 yt-dlp
-youtube-dl
-youtube-search
 youtube-search-python>=1.4.6
 ytthumb
 git+https://github.com/agronholm/anyio

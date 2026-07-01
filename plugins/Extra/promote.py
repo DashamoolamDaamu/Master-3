@@ -1,5 +1,5 @@
-from pyrogram import *
-from pyrogram.types import *
+from kurigram import *
+from kurigram.types import *
 
 @Client.on_message(filters.command("promote") & filters.group)
 async def promoting(client, message):
@@ -25,7 +25,7 @@ async def promoting(client, message):
           await client.promote_chat_member(
             message.chat.id,
             new_admin.id,
-            privileges=pyrogram.types.ChatPrivileges(
+            privileges=kurigram.types.ChatPrivileges(
             can_change_info=True,
             can_delete_messages=True,
             can_pin_messages=True,
@@ -60,7 +60,7 @@ async def demote(client, message):
           await client.promote_chat_member(
             chat_id,
             new_admin.id,
-            privileges=pyrogram.types.ChatPrivileges(
+            privileges=kurigram.types.ChatPrivileges(
             can_change_info=False,
             can_invite_users=False,
             can_delete_messages=False,

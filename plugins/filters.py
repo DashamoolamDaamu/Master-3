@@ -1,6 +1,16 @@
 import io
-from pyrogram import filters, Client, enums
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from kurigram import filters, Client, enums
+from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from kurigram.enums import KeyboardButtonColor
+
+
+def _filter_action_btn(text: str, callback_data: str, positive: bool) -> InlineKeyboardButton:
+    """Colored confirm/cancel button for filter actions."""
+    color = KeyboardButtonColor.SUCCESS if positive else KeyboardButtonColor.DANGER
+    try:
+        return InlineKeyboardButton(text, callback_data=callback_data, color=color)
+    except TypeError:
+        return InlineKeyboardButton(text, callback_data=callback_data)
 from database.filters_mdb import(
    add_filter,
    get_filters,
@@ -265,8 +275,8 @@ async def delallconfirm(client, message):
         await message.reply_text(
             f"This will delete all filters from '{title}'.\nDo you want to continue??",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(text="YES",callback_data="delallconfirm")],
-                [InlineKeyboardButton(text="CANCEL",callback_data="delallcancel")]
+                [_filter_action_btn("✅ YES", "delallconfirm", positive=True)],
+                [_filter_action_btn("❌ CANCEL", "delallcancel", positive=False)]
             ]),
             quote=True
         )

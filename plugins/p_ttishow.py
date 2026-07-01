@@ -1,6 +1,6 @@
-from pyrogram import Client, filters, enums
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from pyrogram.errors.exceptions.bad_request_400 import MessageTooLong, PeerIdInvalid
+from kurigram import Client, filters, enums
+from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from kurigram.errors.exceptions.bad_request_400 import MessageTooLong, PeerIdInvalid
 from info import (
     ADMINS, LOG_CHANNEL, SUPPORT_CHAT, MELCOW_NEW_USERS, DATABASE_URI, DATABASE_URI2, DATABASE_URI3, DATABASE_URI4, DATABASE_URI5,
     POSTGRES_STORAGE_LIMIT_BYTES,
@@ -9,7 +9,7 @@ from database.users_chats_db import db
 from database.ia_filterdb import Media
 from utils import get_size, temp, get_settings
 from Script import script
-from pyrogram.errors import ChatAdminRequired
+from kurigram.errors import ChatAdminRequired
 import text_registry
 import media_registry
 
@@ -23,7 +23,7 @@ async def save_group(bot, message):
     r_j_check = [u.id for u in message.new_chat_members]
     if temp.ME in r_j_check:
         if not await db.get_chat(message.chat.id):
-            total=await bot.get_chat_members_count(message.chat.id)
+            total=await bot.get_chat_member_count(message.chat.id)
             r_j = message.from_user.mention if message.from_user else "Anonymous" 
             await bot.send_message(LOG_CHANNEL, script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, r_j))       
             await db.add_chat(message.chat.id, message.chat.title)

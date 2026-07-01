@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from pyrogram import enums
+from kurigram import enums
 from sqlalchemy import text
 
 from info import DATABASE_NAME, DATABASE_URI

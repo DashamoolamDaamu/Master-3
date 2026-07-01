@@ -1,6 +1,6 @@
-from pyrogram.enums import ParseMode
-from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from kurigram.enums import ParseMode
+from kurigram import Client, filters
+from kurigram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from database.ia_filterdb import get_movie_list, get_series_grouped
 import re
 

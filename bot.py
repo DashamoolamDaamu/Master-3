@@ -12,26 +12,26 @@ import aiohttp
 # Get logging configurations
 logging.config.fileConfig('logging.conf')
 logging.getLogger().setLevel(logging.INFO)
-logging.getLogger("pyrogram").setLevel(logging.ERROR)
+logging.getLogger("kurigram").setLevel(logging.ERROR)
 logging.getLogger("imdbpy").setLevel(logging.ERROR)
 logging.getLogger("asyncio").setLevel(logging.CRITICAL - 1)
 
 import tgcrypto
-from pyrogram import Client, __version__
-from pyrogram.types import BotCommand
-from pyrogram.raw.all import layer
+from kurigram import Client, __version__
+from kurigram.types import BotCommand
+from kurigram.raw.all import layer
 from database.ia_filterdb import Media
 from database.users_chats_db import db
 from info import SESSION, API_ID, API_HASH, BOT_TOKEN, LOG_STR, LOG_CHANNEL, KEEP_ALIVE_URL, DEFAULT_AUTH_CHANNELS
 from utils import temp
 from typing import Union, Optional, AsyncGenerator
-from pyrogram import types
+from kurigram import types
 from Script import script
 from os import environ
 from aiohttp import web as webserver
 
 # Peer ID invalid fix
-from pyrogram import utils as pyroutils
+from kurigram import utils as pyroutils
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
 
@@ -130,7 +130,7 @@ class Bot(Client):
         # ✅ preload auth channels from info.py if DB is empty
         await preload_auth_channels()
 
-        logging.info(f"{me.first_name} running on Pyrogram v{__version__} (Layer {layer}) started on {me.username}.")
+        logging.info(f"{me.first_name} running on Kurigram v{__version__} (Layer {layer}) started on {me.username}.")
         logging.info(LOG_STR)
         await self.set_bot_commands(BOT_COMMANDS)
         logging.info("Bot commands synced successfully.")

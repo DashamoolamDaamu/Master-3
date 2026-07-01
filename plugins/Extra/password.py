@@ -1,6 +1,6 @@
 import random
-from pyrogram import Client, filters, enums
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from kurigram import Client, filters, enums
+from kurigram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 @Client.on_message(filters.command(["genpassword", 'genpw']))

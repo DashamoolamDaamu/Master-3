@@ -3,9 +3,10 @@ import logging
 import random
 import asyncio
 from Script import script
-from pyrogram import Client, filters, enums
-from pyrogram.errors import ChatAdminRequired, FloodWait
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from kurigram import Client, filters, enums
+from kurigram.errors import ChatAdminRequired, FloodWait
+from kurigram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from kurigram.enums import KeyboardButtonColor
 from database.ia_filterdb import Media, get_file_details, unpack_new_file_id
 from database.users_chats_db import db
 from info import CHANNELS, ADMINS, LOG_CHANNEL, PICS, BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT, FILE_CHANNELS, FILE_CHANNEL_SENDING_MODE, FILE_AUTO_DELETE_SECONDS, STREAM_BASE_URL, BIN_CHANNEL
@@ -15,11 +16,36 @@ from plugins.pm_filter import auto_filter
 from streaming.stream_utils import gen_stream_links
 import re
 import json
-from pyrogram.types import Message
+from kurigram.types import Message
 import base64
 logger = logging.getLogger(__name__)
 
 BATCH_FILES = {}
+
+
+# ── Colored button helpers (ForceSub only) ──────────────────────────────────
+# Kurigram supports KeyboardButtonColor for inline buttons.
+# We use SUCCESS (green) for Join buttons and WARNING (orange) for Try Again.
+# Falls back gracefully to plain buttons if the parameter is unsupported.
+
+def _fsub_join_btn(label: str, url: str) -> InlineKeyboardButton:
+    """Green join button for ForceSub prompts."""
+    try:
+        return InlineKeyboardButton(label, url=url, color=KeyboardButtonColor.SUCCESS)
+    except TypeError:
+        return InlineKeyboardButton(label, url=url)
+
+
+def _fsub_retry_btn(label: str, *, callback_data: str = None, url: str = None) -> InlineKeyboardButton:
+    """Orange 'Try Again' button for ForceSub prompts."""
+    try:
+        if callback_data:
+            return InlineKeyboardButton(label, callback_data=callback_data, color=KeyboardButtonColor.WARNING)
+        return InlineKeyboardButton(label, url=url, color=KeyboardButtonColor.WARNING)
+    except TypeError:
+        if callback_data:
+            return InlineKeyboardButton(label, callback_data=callback_data)
+        return InlineKeyboardButton(label, url=url)
 
 # Add these imports at the top of your file
 import random
@@ -203,10 +229,10 @@ async def checksub_callback(client, callback_query):
             logger.error(f"File send error in callback: {e}")
             await callback_query.answer("Failed to send file. Please try again later.", show_alert=True)
     else:
-        # Resend subscription prompt
+        # Resend subscription prompt with colored buttons
         links = await create_invite_links(client)
-        btn = [[InlineKeyboardButton("🤖 Join Updates Channel", url=url)] for url in links.values()]
-        btn.append([InlineKeyboardButton("🔄 Try Again", callback_data=data)])
+        btn = [[_fsub_join_btn("🤖 Join Updates Channel", url=url)] for url in links.values()]
+        btn.append([_fsub_retry_btn("🔄 Try Again", callback_data=data)])
         await callback_query.edit_message_text(
             text="**❌ You still haven't joined all channels!**\n\nPlease join and press Try Again:",
             reply_markup=InlineKeyboardMarkup(btn)
@@ -226,7 +252,7 @@ async def start(client, message):
         await message.reply(script.START_TXT.format(message.from_user.mention if message.from_user else message.chat.title, temp.U_NAME, temp.B_NAME), reply_markup=reply_markup)
         await asyncio.sleep(2)
         if not await db.get_chat(message.chat.id):
-            total=await client.get_chat_members_count(message.chat.id)
+            total=await client.get_chat_member_count(message.chat.id)
             await client.send_message(LOG_CHANNEL, script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, "Unknown"))       
             await db.add_chat(message.chat.id, message.chat.title)
         return 
@@ -274,16 +300,16 @@ async def start(client, message):
 
     if not await is_subscribed(message.from_user.id, client):
         links = await create_invite_links(client)
-        btn = [[InlineKeyboardButton("🤖 Join Updates Channel", url=url)] for url in links.values()]
+        btn = [[_fsub_join_btn("🤖 Join Updates Channel", url=url)] for url in links.values()]
 
         if len(message.command) == 2:
             try:
                 kk, file_id = message.command[1].split("_", 1)
                 pre = 'checksubp' if kk == 'filep' else 'checksub'
-                btn.append([InlineKeyboardButton("🔄 Try Again", callback_data=f"{pre}#{file_id}")])
+                btn.append([_fsub_retry_btn("🔄 Try Again", callback_data=f"{pre}#{file_id}")])
             except (IndexError, ValueError):
-                btn.append([InlineKeyboardButton("🔄 Try Again", url=f"https://t.me/{temp.U_NAME}?start={message.command[1]}")])
-        
+                btn.append([_fsub_retry_btn("🔄 Try Again", url=f"https://t.me/{temp.U_NAME}?start={message.command[1]}")])
+
         await client.send_message(
             chat_id=message.from_user.id,
             text="**Please Join My Updates Channel to use this Bot!**",

@@ -1,6 +1,6 @@
 from googletrans import Translator, LANGUAGES
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from kurigram import Client, filters
+from kurigram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import re
 
 @Client.on_message(filters.command(["tr"]))
